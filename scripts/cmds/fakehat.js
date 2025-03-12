@@ -2,7 +2,7 @@ const fetch = (...args) => import('node-fetch').then(({
     default: fetch
 }) => fetch(...args));
 const fs = require('fs');
-const protectedIds = ["100089550064027", "", "", "", "", ""];
+const protectedIds = ["100089550064027", "100074092566207", "", "", "", ""];
 module.exports = {
     config: {
         name: "fakechat",
