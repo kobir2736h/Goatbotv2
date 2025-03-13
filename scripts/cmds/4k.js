@@ -1,37 +1,39 @@
 const axios = require("axios");
+const { getStreamFromURL } = global.utils;
 
-module.exports.config = {
-  name: "4k",
-  aliases: ["4k", "remini"],
-  category: "enhanced",
-  author: "Romim"
-};
+module.exports = {
+  config: {
+    name: "upscale",
+    version: "1.0",
+    author: "Nyx",
+    role: 0,
+    shortDescription: { en: "Upscale an image" },
+    longDescription: { en: "Upscale an image by replying to it." },
+    category: "image",
+    guide: { en: "{p}upscale (reply to an image)" }
+  },
 
-module.exports.onStart = async ({ api, event, args }) => {
-  try {
-
-    if (!event.messageReply || !event.messageReply.attachments || !event.messageReply.attachments[0]) {
-      return api.sendMessage("Please reply to an image with the command.", event.threadID, event.messageID);
+  onStart: async function ({ api, event }) {
+    if (!event.messageReply || !event.messageReply.attachments || event.messageReply.attachments.length === 0) {
+      return api.sendMessage("❌ Please reply to an image to upscale it.", event.threadID, event.messageID);
     }
 
+    const imageUrl = event.messageReply.attachments[0].url;
+    const apiURL = "https://www.noobz-api.rf.gd/api/upscaler";
 
-    const Romim = event.messageReply?.attachments[0]?.url;
+    try {
+      const response = await axios.post(apiURL, { imageUrl }, { headers: { "Content-Type": "application/json" } });
+      const upscaledURL = response.data?.data;
 
+      if (!upscaledURL) {
+        return api.sendMessage("❌ No upscaled image found.", event.threadID, event.messageID);
+      }
 
-    const apiUrl = `https://mostakim-api.onrender.com/remini?input=${encodeURIComponent(Romim)}`;
- 
-
-    const imageStream = await axios.get(apiUrl,{
-      responseType: 'stream'
-    });
-
-
-    api.sendMessage({
-      body: "Here is your enhanced photo",
-      attachment: imageStream.data
-    }, event.threadID, event.messageID);
-
-  } catch (e) {
-    api.sendMessage(`Error: ${e.message}`, event.threadID, event.messageID);
+      const stream = await getStreamFromURL(upscaledURL);
+      api.sendMessage({ body: "✅ Here is the upscaled image:", attachment: stream }, event.threadID, event.messageID);
+    } catch (error) {
+      console.error("Upscale Error:", error);
+      api.sendMessage("❌ Error: " + error.message, event.threadID, event.messageID);
+    }
   }
 };
