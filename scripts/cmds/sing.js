@@ -1,83 +1,93 @@
-const axios = require('axios');
-const fs = require('fs');
-const path = require('path');
+const axios = require("axios");
+const fs = require("fs");
+const path = require("path");
+const ytSearch = require("yt-search");
 
 module.exports = {
   config: {
-    name: 'music',
-    author: 'Nyx',
-    usePrefix: false,
-    category: 'Youtube Song Downloader'
+    name: "music",
+    aliases: ["play", "song"],
+    version: "2.0.0",
+    author: "Samrat",
+    countDown: 5,
+    role: 0,
+    shortDescription: {
+      en: "Download YouTube song from keyword search and link",
+    },
+    longDescription: {
+      en: "Download YouTube song or video using a search keyword or link.",
+    },
+    category: "media",
+    guide: {
+      en: "{pn} [song name] [audio/video]",
+    },
   },
-  onStart: async ({ event, api, args, message }) => {
+
+  onStart: async function ({ message, args }) {
+    let songName, type;
+
+    if (
+      args.length > 1 &&
+      (args[args.length - 1] === "audio" || args[args.length - 1] === "video")
+    ) {
+      type = args.pop();
+      songName = args.join(" ");
+    } else {
+      songName = args.join(" ");
+      type = "audio";
+    }
+
+    const processingMessage = await message.reply(
+      "✅ Processing your request. Please wait..."
+    );
+
     try {
-      const query = args.join(' ');
-      if (!query) return message.reply('Please provide a search query!');
-      
-      const searchResponse = await axios.get(`https://mostakim.onrender.com/mostakim/ytSearch?search=${encodeURIComponent(query)}`);
-      api.setMessageReaction("⏳", event.messageID, () => {}, true);
-
-      const parseDuration = (timestamp) => {
-        const parts = timestamp.split(':').map(part => parseInt(part));
-        let seconds = 0;
-
-        if (parts.length === 3) {
-          seconds = parts[0] * 3600 + parts[1] * 60 + parts[2];
-        } else if (parts.length === 2) {
-          seconds = parts[0] * 60 + parts[1];
-        }
-
-        return seconds;
-      };
-
-      const filteredVideos = searchResponse.data.filter(video => {
-        try {
-          const totalSeconds = parseDuration(video.timestamp);
-          return totalSeconds < 600;
-        } catch {
-          return false;
-        }
-      });
-
-      if (filteredVideos.length === 0) {
-        return message.reply('No short videos found (under 10 minutes)!');
+      // YouTube search
+      const searchResults = await ytSearch(songName);
+      if (!searchResults || !searchResults.videos.length) {
+        throw new Error("No results found for your search query.");
       }
 
-      const selectedVideo = filteredVideos[0];
-      const tempFilePath = path.join(__dirname, 'temp_audio.m4a');
-      const apiResponse = await axios.get(`https://mostakim.onrender.com/m/sing?url=${selectedVideo.url}`);
-      
-      if (!apiResponse.data.url) {
-        throw new Error('No audio URL found in response');
+      const topResult = searchResults.videos[0];
+      const videoId = topResult.videoId;
+
+      // Construct API URL
+      const apiKey = "priyansh-here";
+      const apiUrl = `https://priyansh-ai.onrender.com/youtube?id=${videoId}&type=${type}&apikey=${apiKey}`;
+
+      // Fetch download URL
+      const downloadResponse = await axios.get(apiUrl);
+      const downloadUrl = downloadResponse.data.downloadUrl;
+
+      const response = await axios({
+        url: downloadUrl,
+        method: "GET",
+        responseType: "arraybuffer",
+      });
+
+      if (!response.data) {
+        throw new Error("Failed to fetch the song.");
       }
 
-      const writer = fs.createWriteStream(tempFilePath);
-      const audioResponse = await axios({
-        url: apiResponse.data.url,
-        method: 'GET',
-        responseType: 'stream'
-      });
+      const filename = `${topResult.title}.${type === "audio" ? "mp3" : "mp4"}`;
+      const downloadPath = path.join(__dirname, filename);
 
-      audioResponse.data.pipe(writer);
-      
-      await new Promise((resolve, reject) => {
-        writer.on('finish', resolve);
-        writer.on('error', reject);
-      });
-
-      api.setMessageReaction("✅", event.messageID, () => {}, true);
+      // Save the file
+      fs.writeFileSync(downloadPath, response.data);
 
       await message.reply({
-        body: `🎧 Now playing: ${selectedVideo.title}\nDuration: ${selectedVideo.timestamp}`,
-        attachment: fs.createReadStream(tempFilePath)
+        body: `🎶 Title: ${topResult.title}\n\nHere is your ${
+          type === "audio" ? "audio" : "video"
+        } 🎧:`,
+        attachment: fs.createReadStream(downloadPath),
       });
 
-      fs.unlink(tempFilePath, (err) => {
-        if (err) message.reply(`Error deleting temp file: ${err.message}`);
-      });
-
+      // Delete file after sending
+      fs.unlinkSync(downloadPath);
+      message.unsend(processingMessage.messageID);
     } catch (error) {
-      message.reply(`Error: ${error.message}`);
+      console.error(`Failed to download and send song: ${error.message}`);
+      message.reply(`❌ Failed to download song: ${error.message}`);
     }
-  }
+  },
 };
