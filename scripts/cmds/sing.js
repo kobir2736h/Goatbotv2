@@ -1,93 +1,55 @@
 const axios = require("axios");
-const fs = require("fs");
-const path = require("path");
-const ytSearch = require("yt-search");
+const yts = require("yt-search");
 
 module.exports = {
   config: {
     name: "music",
-    aliases: ["play", "song"],
-    version: "2.0.0",
-    author: "Samrat",
+    aliases: ["audio", "song"],
+    version: "1.1",
+    author: "Nobita",
     countDown: 5,
     role: 0,
-    shortDescription: {
-      en: "Download YouTube song from keyword search and link",
-    },
-    longDescription: {
-      en: "Download YouTube song or video using a search keyword or link.",
-    },
+    shortDescription: "Download audio from YouTube",
+    longDescription: "Searches YouTube and downloads audio in MP3 format.",
     category: "media",
-    guide: {
-      en: "{pn} [song name] [audio/video]",
-    },
+    guide: "{pn} <song name or YouTube URL>"
   },
 
   onStart: async function ({ message, args }) {
-    let songName, type;
-
-    if (
-      args.length > 1 &&
-      (args[args.length - 1] === "audio" || args[args.length - 1] === "video")
-    ) {
-      type = args.pop();
-      songName = args.join(" ");
-    } else {
-      songName = args.join(" ");
-      type = "audio";
-    }
-
-    const processingMessage = await message.reply(
-      "✅ Processing your request. Please wait..."
-    );
-
     try {
-      // YouTube search
-      const searchResults = await ytSearch(songName);
-      if (!searchResults || !searchResults.videos.length) {
-        throw new Error("No results found for your search query.");
+      if (!args.length) return message.reply("❌ Please provide a song name or YouTube link.");
+
+      let videoUrl = args.join(" ");
+      let videoTitle = "Unknown Title";
+
+      // Agar input me YouTube link nahi hai to search karo
+      if (!videoUrl.includes("youtube.com") && !videoUrl.includes("youtu.be")) {
+        message.reply("🔎 Searching for the song...");
+        const searchResults = await yts(videoUrl);
+        if (!searchResults.videos.length) return message.reply("⚠️ No results found.");
+        
+        videoUrl = searchResults.videos[0].url;
+        videoTitle = searchResults.videos[0].title;
       }
 
-      const topResult = searchResults.videos[0];
-      const videoId = topResult.videoId;
+      // Tumhari API se MP3 download link lo
+      const apiUrl = `https://nobita-music-8h2y.onrender.com/download?url=${videoUrl}&type=audio`;
+      const response = await axios.get(apiUrl);
 
-      // Construct API URL
-      const apiKey = "priyansh-here";
-      const apiUrl = `https://priyansh-ai.onrender.com/youtube?id=${videoId}&type=${type}&apikey=${apiKey}`;
-
-      // Fetch download URL
-      const downloadResponse = await axios.get(apiUrl);
-      const downloadUrl = downloadResponse.data.downloadUrl;
-
-      const response = await axios({
-        url: downloadUrl,
-        method: "GET",
-        responseType: "arraybuffer",
-      });
-
-      if (!response.data) {
-        throw new Error("Failed to fetch the song.");
+      if (!response.data || !response.data.file_url) {
+        return message.reply("❌ Failed to fetch the audio. Try again later.");
       }
 
-      const filename = `${topResult.title}.${type === "audio" ? "mp3" : "mp4"}`;
-      const downloadPath = path.join(__dirname, filename);
-
-      // Save the file
-      fs.writeFileSync(downloadPath, response.data);
+      const audioUrl = response.data.file_url;
 
       await message.reply({
-        body: `🎶 Title: ${topResult.title}\n\nHere is your ${
-          type === "audio" ? "audio" : "video"
-        } 🎧:`,
-        attachment: fs.createReadStream(downloadPath),
+        body: `🎵 *Title:* ${videoTitle}\n🔗 *YouTube Link:* ${videoUrl}`,
+        attachment: await global.utils.getStreamFromURL(audioUrl, `${videoTitle}.mp3`)
       });
 
-      // Delete file after sending
-      fs.unlinkSync(downloadPath);
-      message.unsend(processingMessage.messageID);
     } catch (error) {
-      console.error(`Failed to download and send song: ${error.message}`);
-      message.reply(`❌ Failed to download song: ${error.message}`);
+      console.error("Error in music command:", error);
+      message.reply("⚠️ An error occurred while processing your request.");
     }
-  },
+  }
 };
