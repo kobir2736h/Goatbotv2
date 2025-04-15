@@ -1,96 +1,61 @@
-const axios = require('axios');
+const axios = require("axios");
 const yts = require("yt-search");
-
-const baseApiUrl = async () => {
-    const base = await axios.get(
-        `https://raw.githubusercontent.com/Mostakim0978/D1PT0/refs/heads/main/baseApiUrl.json`
-    );
-    return base.data.api;
-};
-
-(async () => {
-    global.apis = {
-        diptoApi: await baseApiUrl()
-    };
-})();
-
-async function getStreamFromURL(url, pathName) {
-    try {
-        const response = await axios.get(url, {
-            responseType: "stream"
-        });
-        response.data.path = pathName;
-        return response.data;
-    } catch (err) {
-        throw err;
-    }
-}
-
-global.utils = {
-    ...global.utils,
-    getStreamFromURL: global.utils.getStreamFromURL || getStreamFromURL
-};
-
-function getVideoID(url) {
-    const checkurl = /^(?:https?:\/\/)?(?:m\.|www\.)?(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))((\w|-){11})(?:\S+)?$/;
-    const match = url.match(checkurl);
-    return match ? match[1] : null;
-}
-
-const config = {
-    name: "video",
-    author: "Mesbah Saxx",
-    credits: "Mesbah Saxx",
-    version: "1.0.0",
-    role: 0,
-    hasPermssion: 0,
-    description: "",
-    usePrefix: true,
-    prfix: true,
-    category: "media",
-    commandCategory: "media",
-    cooldowns: 5,
-    countDown: 5,
-};
-
-async function onStart({ api, args, event }) {
-    try {
-        let videoID, w;
-        const url = args[0];
-
-        if (url && (url.includes("youtube.com") || url.includes("youtu.be"))) {
-            videoID = getVideoID(url);
-            if (!videoID) {
-                await api.sendMessage("Invalid YouTube URL.", event.threadID, event.messageID);
-            }
-        } else {
-            const songName = args.join(' ');
-            w = await api.sendMessage(`Searching song "${songName}"... `, event.threadID);
-            const r = await yts(songName);
-            const videos = r.videos.slice(0, 50);
-
-            const videoData = videos[Math.floor(Math.random() * videos.length)];
-            videoID = videoData.videoId;
-        }
-
-        const { data: { title, quality, downloadLink } } = await axios.get(`${global.apis.diptoApi}/ytDl3?link=${videoID}&format=mp4`);
-
-        api.unsendMessage(w.messageID);
-        
-        const o = '.php';
-        const shortenedLink = (await axios.get(`https://tinyurl.com/api-create${o}?url=${encodeURIComponent(downloadLink)}`)).data;
-
-        await api.sendMessage({
-            body: `🔖 - 𝚃𝚒𝚝𝚕𝚎: ${title}\n✨ - 𝚀𝚞𝚊𝚕𝚒𝚝𝚢: ${quality}\n\n📥 - 𝙳𝚘𝚠𝚗𝚕𝚘𝚊𝚍 𝙻𝚒𝚗𝚔: ${shortenedLink}`,
-            attachment: await global.utils.getStreamFromURL(downloadLink, title+'.mp4')
-        }, event.threadID, event.messageID);
-    } catch (e) {
-        api.sendMessage(e.message || "An error occurred.", event.threadID, event.messageID);
-    }
-}
+const fs = require("fs");
+const path = require("path");
 
 module.exports = {
-    config,
-    onStart,
-    run: onStart
+  config: {
+    name: "video",
+    aliases: ["vid", "songvid"],
+    version: "1.3",
+    author: "Nobita",
+    countDown: 5,
+    role: 0,
+    shortDescription: "Download video from YouTube",
+    longDescription: "Searches YouTube and downloads video in MP4 format.",
+    category: "media",
+    guide: "{pn} <song name or YouTube URL>"
+  },
+
+  onStart: async function ({ message, args }) {
+    if (!args.length) return message.reply("❌ Please provide a video name or YouTube link.");
+
+    let videoUrl = args.join(" ");
+    let videoTitle = "Unknown Title";
+
+    try {
+      if (!videoUrl.includes("youtube.com") && !videoUrl.includes("youtu.be")) {
+        message.reply("🔎 Searching for the video...");
+        const searchResults = await yts(videoUrl);
+        if (!searchResults.videos.length) return message.reply("⚠️ No results found.");
+
+        videoUrl = searchResults.videos[0].url;
+        videoTitle = searchResults.videos[0].title;
+      }
+
+      // Debugging log
+      console.log(`✅ Fetching MP4 for: ${videoTitle} (${videoUrl})`);
+
+      // API request
+      const apiUrl = `https://nobita-music-8h2y.onrender.com/download?url=${videoUrl}&type=video`;
+      const response = await axios.get(apiUrl);
+
+      if (!response.data || !response.data.file_url) {
+        console.log("❌ API response invalid:", response.data);
+        return message.reply("❌ Failed to fetch the video. Try again later.");
+      }
+
+      const videoUrlFinal = response.data.file_url;
+      console.log(`✅ Video file URL received: ${videoUrlFinal}`);
+
+      await message.reply({
+        body: `🎬 *Title:* ${videoTitle}\n🔗 *YouTube Link:* ${videoUrl}`,
+        attachment: await global.utils.getStreamFromURL(videoUrlFinal)
+      });
+
+    } catch (error) {
+      console.error("🚨 Video Command Error:", error);
+      return message.reply(`⚠️ Error: ${error.message}`);
+    }
+  }
 };
