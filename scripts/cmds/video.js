@@ -1,61 +1,86 @@
-const axios = require("axios");
-const yts = require("yt-search");
-const fs = require("fs");
-const path = require("path");
+const axios = require('axios');
+const fs = require('fs');
+const path = require('path');
+const ytSearch = require('yt-search');
+const https = require('https');
+
+function deleteAfterTimeout(filePath, timeout = 5000) {
+  setTimeout(() => {
+    if (fs.existsSync(filePath)) {
+      fs.unlink(filePath, (err) => {
+        if (!err) {
+          console.log(`✅ Deleted file: ${filePath}`);
+        } else {
+          console.error(`❌ Error deleting file: ${err.message}`);
+        }
+      });
+    }
+  }, timeout);
+}
 
 module.exports = {
   config: {
-    name: "video",
-    aliases: ["vid", "songvid"],
-    version: "1.3",
-    author: "Nobita",
-    countDown: 5,
-    role: 0,
-    shortDescription: "Download video from YouTube",
-    longDescription: "Searches YouTube and downloads video in MP4 format.",
-    category: "media",
-    guide: "{pn} <song name or YouTube URL>"
+    name: 'video',
+    author: 'Arun',
+    usePrefix: false,
+    category: 'YouTube Video Downloader'
   },
-
-  onStart: async function ({ message, args }) {
-    if (!args.length) return message.reply("❌ Please provide a video name or YouTube link.");
-
-    let videoUrl = args.join(" ");
-    let videoTitle = "Unknown Title";
-
+  onStart: async ({ event, api, args, message }) => {
     try {
-      if (!videoUrl.includes("youtube.com") && !videoUrl.includes("youtu.be")) {
-        message.reply("🔎 Searching for the video...");
-        const searchResults = await yts(videoUrl);
-        if (!searchResults.videos.length) return message.reply("⚠️ No results found.");
+      const query = args.join(' ');
+      if (!query) return message.reply('⚠️ Video ka naam to likho na! 😒');
 
-        videoUrl = searchResults.videos[0].url;
-        videoTitle = searchResults.videos[0].title;
+      api.setMessageReaction("⏳", event.messageID, () => {}, true);
+
+      const searchResults = await ytSearch(query);
+      if (!searchResults || !searchResults.videos.length) {
+        throw new Error('Kuch nahi mila! Video ka naam sahi likho. 😑');
       }
 
-      // Debugging log
-      console.log(`✅ Fetching MP4 for: ${videoTitle} (${videoUrl})`);
-
-      // API request
-      const apiUrl = `https://nobita-music-0nwg.onrender.com/download?url=${videoUrl}&type=video`;
-      const response = await axios.get(apiUrl);
-
-      if (!response.data || !response.data.file_url) {
-        console.log("❌ API response invalid:", response.data);
-        return message.reply("❌ Failed to fetch the video. Try again later.");
+      const selectedVideo = searchResults.videos[0];
+      const videoUrl = `https://www.youtube.com/watch?v=${selectedVideo.videoId}`;
+      const safeTitle = selectedVideo.title.replace(/[^a-zA-Z0-9]/g, "_");
+      const downloadDir = path.join(__dirname, "cache");
+      if (!fs.existsSync(downloadDir)) {
+        fs.mkdirSync(downloadDir, { recursive: true });
       }
 
-      const videoUrlFinal = response.data.file_url;
-      console.log(`✅ Video file URL received: ${videoUrlFinal}`);
+      const apiUrl = `https://arun-music.onrender.com/download?url=${encodeURIComponent(videoUrl)}&type=video`;
+      const apiResponse = await axios.get(apiUrl);
 
-      await message.reply({
-        body: `🎬 *Title:* ${videoTitle}\n🔗 *YouTube Link:* ${videoUrl}`,
-        attachment: await global.utils.getStreamFromURL(videoUrlFinal)
+      if (!apiResponse.data.file_url) {
+        throw new Error('Download fail ho gaya. 😭');
+      }
+
+      const downloadUrl = apiResponse.data.file_url.replace("http:", "https:");
+      const videoPath = path.join(downloadDir, `${safeTitle}.mp4`);
+
+      const writer = fs.createWriteStream(videoPath);
+      const videoResponse = await axios({
+        url: downloadUrl,
+        method: 'GET',
+        responseType: 'stream'
       });
 
+      videoResponse.data.pipe(writer);
+
+      await new Promise((resolve, reject) => {
+        writer.on('finish', resolve);
+        writer.on('error', reject);
+      });
+
+      api.setMessageReaction("✅", event.messageID, () => {}, true);
+
+      await message.reply({
+        body: `🎥 Here is your video: ${selectedVideo.title}`,
+        attachment: fs.createReadStream(videoPath)
+      });
+
+      deleteAfterTimeout(videoPath, 5000);
+
     } catch (error) {
-      console.error("🚨 Video Command Error:", error);
-      return message.reply(`⚠️ Error: ${error.message}`);
+      console.error(`❌ Error: ${error.message}`);
+      message.reply(`❌ Error: ${error.message} 😢`);
     }
   }
 };
