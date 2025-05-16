@@ -1,68 +1,37 @@
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
-const ytSearch = require('yt-search');
-const https = require('https');
-
-function deleteAfterTimeout(filePath, timeout = 5000) {
-  setTimeout(() => {
-    if (fs.existsSync(filePath)) {
-      fs.unlink(filePath, (err) => {
-        if (!err) {
-          console.log(`✅ Deleted file: ${filePath}`);
-        } else {
-          console.error(`❌ Error deleting file: ${err.message}`);
-        }
-      });
-    }
-  }, timeout);
-}
 
 module.exports = {
   config: {
     name: 'video',
-    author: 'Arun',
-    usePrefix: false,
-    category: 'YouTube Video Downloader'
+    author: 'Mostakim',
+    category: 'Youtube Video Downloader'
   },
   onStart: async ({ event, api, args, message }) => {
     try {
       const query = args.join(' ');
-      if (!query) return message.reply('⚠️ Video ka naam to likho na! 😒');
+      if (!query) return message.reply('Please provide a search query!');
 
+      const searchResponse = await axios.get(`https://www.x-noobs-apis.42web.io/mostakim/ytSearch?search=${encodeURIComponent(query)}`);
       api.setMessageReaction("⏳", event.messageID, () => {}, true);
 
-      const searchResults = await ytSearch(query);
-      if (!searchResults || !searchResults.videos.length) {
-        throw new Error('Kuch nahi mila! Video ka naam sahi likho. 😑');
-      }
+      const video = searchResponse.data[0];
+      if (!video || !video.url) return message.reply('No video found!');
 
-      const selectedVideo = searchResults.videos[0];
-      const videoUrl = `https://www.youtube.com/watch?v=${selectedVideo.videoId}`;
-      const safeTitle = selectedVideo.title.replace(/[^a-zA-Z0-9]/g, "_");
-      const downloadDir = path.join(__dirname, "cache");
-      if (!fs.existsSync(downloadDir)) {
-        fs.mkdirSync(downloadDir, { recursive: true });
-      }
+      const videoApi = await axios.get(`https://www.x-noobs-apis.42web.io/m/ytdl?url=${video.url}`);
+      if (!videoApi.data.url) throw new Error('No video URL found in API response.');
 
-      const apiUrl = `https://arun-music.onrender.com/download?url=${encodeURIComponent(videoUrl)}&type=video`;
-      const apiResponse = await axios.get(apiUrl);
+      const tempFilePath = path.join(__dirname, 'temp_video.mp4');
+      const writer = fs.createWriteStream(tempFilePath);
 
-      if (!apiResponse.data.file_url) {
-        throw new Error('Download fail ho gaya. 😭');
-      }
-
-      const downloadUrl = apiResponse.data.file_url.replace("http:", "https:");
-      const videoPath = path.join(downloadDir, `${safeTitle}.mp4`);
-
-      const writer = fs.createWriteStream(videoPath);
-      const videoResponse = await axios({
-        url: downloadUrl,
+      const videoStream = await axios({
+        url: videoApi.data.url,
         method: 'GET',
         responseType: 'stream'
       });
 
-      videoResponse.data.pipe(writer);
+      videoStream.data.pipe(writer);
 
       await new Promise((resolve, reject) => {
         writer.on('finish', resolve);
@@ -72,15 +41,16 @@ module.exports = {
       api.setMessageReaction("✅", event.messageID, () => {}, true);
 
       await message.reply({
-        body: `🎥 Here is your video: ${selectedVideo.title}`,
-        attachment: fs.createReadStream(videoPath)
+        body: `📽 Now playing: ${video.title}\nDuration: ${video.timestamp}`,
+        attachment: fs.createReadStream(tempFilePath)
       });
 
-      deleteAfterTimeout(videoPath, 5000);
+      fs.unlink(tempFilePath, (err) => {
+        if (err) message.reply(`Error deleting temp file: ${err.message}`);
+      });
 
     } catch (error) {
-      console.error(`❌ Error: ${error.message}`);
-      message.reply(`❌ Error: ${error.message} 😢`);
+      message.reply(`Error: ${error.message}`);
     }
   }
 };
