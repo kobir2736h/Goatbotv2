@@ -1,39 +1,43 @@
 const axios = require("axios");
-const { getStreamFromURL } = global.utils;
 
 module.exports = {
   config: {
-    name: "upscale",
-    version: "1.0",
-    author: "Nyx",
+    name: "4k",
+    aliases: ["upscale"],
+    version: "1.1",
     role: 0,
-    shortDescription: { en: "Upscale an image" },
-    longDescription: { en: "Upscale an image by replying to it." },
+    author: "Team Calyx",
+    countDown: 5,
+    longDescription: "Upscale images to 4K resolution.",
     category: "image",
-    guide: { en: "{p}upscale (reply to an image)" }
+    guide: {
+      en: "${pn} reply to an image to upscale it to 4K resolution."
+    }
   },
-
-  onStart: async function ({ api, event }) {
-    if (!event.messageReply || !event.messageReply.attachments || event.messageReply.attachments.length === 0) {
-      return api.sendMessage("❌ Please reply to an image to upscale it.", event.threadID, event.messageID);
+  onStart: async function ({ message, event }) {
+    if (!event.messageReply || !event.messageReply.attachments || !event.messageReply.attachments[0]) {
+      return message.reply("Please reply to an image to upscale it.");
     }
+    const imgurl = encodeURIComponent(event.messageReply.attachments[0].url);
+    const noobs = 'xyz';
+    const upscaleUrl = `https://smfahim.onrender.com/4k?url=${imgurl}`;
+    
+    message.reply("🔄| Processing... Please wait a moment.", async (err, info) => {
+      try {
+        const { data: { image } } = await axios.get(upscaleUrl);
+        const attachment = await global.utils.getStreamFromURL(image, "upscaled-image.png");
 
-    const imageUrl = event.messageReply.attachments[0].url;
-    const apiURL = "https://www.noobz-api.rf.gd/api/upscaler";
+        message.reply({
+          body: "✅| Here is your 4K upscaled image:",
+          attachment: attachment
+        });
+        let processingMsgID = info.messageID;
+        message.unsend(processingMsgID);
 
-    try {
-      const response = await axios.post(apiURL, { imageUrl }, { headers: { "Content-Type": "application/json" } });
-      const upscaledURL = response.data?.data;
-
-      if (!upscaledURL) {
-        return api.sendMessage("❌ No upscaled image found.", event.threadID, event.messageID);
+      } catch (error) {
+        console.error(error);
+        message.reply("❌| There was an error upscaling your image.");
       }
-
-      const stream = await getStreamFromURL(upscaledURL);
-      api.sendMessage({ body: "✅ Here is the upscaled image:", attachment: stream }, event.threadID, event.messageID);
-    } catch (error) {
-      console.error("Upscale Error:", error);
-      api.sendMessage("❌ Error: " + error.message, event.threadID, event.messageID);
-    }
+    });
   }
 };
