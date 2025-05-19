@@ -20,7 +20,7 @@ module.exports = {
     if (!prompt) return api.sendMessage("❌| Wrong Format. ✅ | Use: 17/18 years old boy/girl watching football match on TV with 'Dipto' and '69' written on the back of their dress, 4k", event.threadID, event.messageID);
     try {
        //const cookies = "cookies here (_U value)";
-const cookies = ["1WMSMa5rJ9Jikxsu_KvCxWmb0m4AwilqsJhlkC1whxRDp2StLDR-oJBnLWpoppENES3sBh9_OeFE6BT-Kzzk_46_g_z_NPr7Du63M92maZmXZYR91ymjlxE6askzY9hMCdtX-9LK09sUsoqokbOwi3ldOlm0blR_0VLM3OjdHWcczWjvJ78LSUT7MWrdfdplScZbtHfNyOFlDIGkOKHI7Bg"];
+const cookies = ["1s9T4X5fLscmuFdH2kDvBNfJE6lxP9aEYUHqDemPz3H9spmvVwNGloKPZMJN4kT9Q5uvAuJ5h1MxLPlI4hhyC4Y1lQCdtzrbY4NZ7YuaFDukS8wFa0JzlQkErbeevBlmraj6kbTCl_bm_EKbeRLhhgYCKK7zgixGEZJLJBhLaS0sLCwnLJ9A1B6OjuF5LWAxNCViITeM4dtOjvmIW5pSIpg"];
 const randomCookie = cookies[Math.floor(Math.random() * cookies.length)];
       const wait = api.sendMessage("Wait koro baby 😽", event.threadID);
       const response = await axios.get(`${await baseApiUrl()}/dalle?prompt=${prompt}&key=dipto008&cookies=${randomCookie}`);
