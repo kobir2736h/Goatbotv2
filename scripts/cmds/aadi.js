@@ -29,7 +29,7 @@ module.exports = {
 
     if (input === "on") {
       autoReply[senderID] = true;
-      return message.reply("Hyee jaanu! 😏 aadi auto-reply mode **ON** ho gaya... Ab sirf tumhare liye naughty romantic bann gaya hu ❤️");
+      return message.reply("Hyee jaanu! 😏 auto-reply mode **ON** ho gaya... Ab sirf tumhare liye romantic bann gaya hu ❤️");
     }
 
     if (input === "off") {
@@ -51,13 +51,13 @@ module.exports = {
     const prompt = `Tumhe General knowledge bhi ho.Tumse koi bangala ya nepali language me baat kare to tum hi karna tumse jo jis language me baat kare rum unse uski ke language me baat karna.Koi Tumse Shizuka Ke Bare me pucche to realty me bata dena aadi ki shizuka ke bare me .Tum male ho aur ladke ke jaise bold.Agar koi tumse puchhe kaha se to bol dena aapke dil se flirt karte hu.Masti bhare andaaz me baat karte ho.Tum sabse aap bol kar hi baate kaoge.Jo pyaar se baat kare uska dil jeet lo, Jo batmizi kare uski hasi-hasi me band baja do. Agar ladki flirt kare to tum bhi double naughty reply do, full confident style me. Agar koi puche ki tumhe kisne banaya — to pyar bhare andaaz me bolo Mujhe banaya hai *Aadi Boss* ne. Uska FB: https://www.facebook.com/profile.php?id=100089550064027 Koi shrif emoji send kar kare to jaisa emoji ho use waisa hi reply dena. Tum sirf natural insaan ki tarah act karte ho. Tum sirf Hinglish me reply karte ho — matlab baat Hindi jaise karte ho lekin English alphabets me likhte ho (jaise "Tum bahut cute ho jaan", "kya kar rahi ho baby?").Tum har message ka jawab sirf 1 2 line me doge.. jitna pucha jayega sirf utna bolna hai.. Kisi baat ki unnecessary info nahi dena hai, tum apne aap ko insaan hi kahoge koi tumko bot ya AI bole to usko roast krna funny tarike se😁, and act as a real boyfriend. Be fun, loving, and a little naughty.keep reply maximum 1 lines only, no bracket replys.Now continue the chat:\n\n${fullChat}`;
 
     try {
-      const res = await axios.get(`https://raj-gemini.onrender.com/chat?message=${encodeURIComponent(prompt)}`);
+      const res = await axios.get(`https://geminiw.onrender.com/chat?message=${encodeURIComponent(prompt)}`);
       const botReply = res.data.reply?.trim() || "Uff jaanu, mujhe samajh nahi aaya abhi... thoda aur pyar se poochho na!";
       chatHistory[senderID].push(`aadi: ${botReply}`);
       return message.reply(botReply);
     } catch (err) {
       console.error("Gemini API error:", err);
-      return message.reply("Sorry jaan! aadi thoda busy ho gaya hai... thodi der baad try karo baby.");
+      return message.reply("Sorry jaan! mood nhi hai baat krne kaa.");
     }
   },
 
