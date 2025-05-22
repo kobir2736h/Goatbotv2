@@ -1,74 +1,63 @@
 const axios = require("axios");
-const fs = require("fs-extra");
 const path = require("path");
 
 module.exports = {
   config: {
     name: "pin",
     aliases: ["pinterest"],
-    version: "1.0.0",
-    author: "kshitiz",
+    version: "1.0",
+    author: "حسين يعقوبي",
     role: 0,
-    countDown: 10,
-    shortDescription: {
-      en: "Search images on Pinterest"
+    countDown: 60,
+    longDescription: {
+      en: "This command allows you to search for images on Pinterest based on a specific query and retrieve a certain number of images."
     },
-    category: "image",
+    category: "media",
     guide: {
-      en: "{prefix}pin <search query> -<number of images>"
+      en: "{pn} cat - 6: {pn} Cat"
     }
   },
 
-  onStart: async function ({ api, event, args, usersData }) {
+  onStart: async function ({ api, event, args }) {
     try {
-      const searchQuery = args.join(" ");
+      api.setMessageReaction("⏱️", event.messageID, (err) => {}, true);
+      const fs = require("fs-extra");
 
-   
-      if (!searchQuery.includes("-")) {
-        return api.sendMessage(`Invalid format. Example: {prefix}pin cats -5`, event.threadID, event.messageID);
-      }
+      // Translate search term from Arabic to English
+      const translationResponse = await axios.get(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=ar&tl=en&dt=t&q=${encodeURIComponent(args.join(" "))}`);
+      const translatedText = translationResponse.data[0][0][0];
+      
+      // Use translated text for Pinterest API search
+      const pinterestResponse = await axios.get(`https://smfahim.xyz/pin?title=${encodeURIComponent(translatedText)}&search=9`);
+      const data = pinterestResponse.data.data.slice(0, 9); // Limit to 9 images
 
-     
-      const [query, numImages] = searchQuery.split("-").map(str => str.trim());
-      const numberOfImages = parseInt(numImages);
-
-     
-      if (isNaN(numberOfImages) || numberOfImages <= 0 || numberOfImages > 25) {
-        return api.sendMessage("Please specify a number between 1 and 25.", event.threadID, event.messageID);
-      }
-
-   
-      const apiUrl = `https://pin-kshitiz.vercel.app/pin?search=${encodeURIComponent(query)}`;
-      const response = await axios.get(apiUrl);
-      const imageData = response.data.result;
-
-     
-      if (!imageData || !Array.isArray(imageData) || imageData.length === 0) {
-        return api.sendMessage(`No images found for "${query}".`, event.threadID, event.messageID);
-      }
-
-    
       const imgData = [];
-      for (let i = 0; i < Math.min(numberOfImages, imageData.length); i++) {
-        const imageUrl = imageData[i];
-        try {
-          const imgResponse = await axios.get(imageUrl, { responseType: 'arraybuffer' });
-          const imgPath = path.join(__dirname, 'cache', `${i + 1}.jpg`);
-          await fs.outputFile(imgPath, imgResponse.data);
-          imgData.push(fs.createReadStream(imgPath));
-        } catch (error) {
-          console.error(error);
-        }
+      
+      for (let i = 0; i < data.length; i++) {
+        const imgResponse = await axios.get(data[i], { responseType: "arraybuffer" });
+        const imgPath = path.join(__dirname, "cache", `${i + 1}.jpg`);
+        await fs.outputFile(imgPath, imgResponse.data);
+
+        imgData.push(fs.createReadStream(imgPath));
       }
 
-     
+      // Send the images as an attachment
       await api.sendMessage({
         attachment: imgData,
-        body: ``
+        body: `📸 | Search results for: ${args.join(" ")}`
       }, event.threadID, event.messageID);
+
+      api.setMessageReaction("✅", event.messageID, (err) => {}, true);
+
+      // Clean up the cache folder
+      await fs.remove(path.join(__dirname, "cache"));
     } catch (error) {
       console.error(error);
-      return api.sendMessage(`An error occurred.`, event.threadID, event.messageID);
+      return api.sendMessage(
+        `❌ | An error occurred while processing your request.`,
+        event.threadID,
+        event.messageID
+      );
     }
   }
 };
