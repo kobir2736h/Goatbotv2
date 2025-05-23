@@ -90,7 +90,7 @@ const helpListImages = [ "https://i.imgur.com/a3JShJK.jpeg" ];
         const usage = guideBody.replace(/{p}/g, prefix).replace(/{n}/g, configCommand.name);
 
         const response = `
-  ╭───⊙
+   ╭───⊙
   │ 🔶 ${configCommand.name}
   ├── INFO
   │ 📝 𝗗𝗲𝘀𝗰𝗿𝗶𝗽𝘁𝗶𝗼𝗻: ${longDescription}
