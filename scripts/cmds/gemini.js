@@ -1,74 +1,62 @@
 const axios = require("axios");
+const baseApiUrl = async () => {
+  const base = await axios.get(
+    `https://raw.githubusercontent.com/Blankid018/D1PT0/main/baseApiUrl.json`,
+  );
+  return base.data.api;
+};
 
 module.exports = {
   config: {
     name: "gemini",
     version: "1.0",
-    author: "Mostakim",
+    author: "Dipto",
+    description: "gemeini ai",
     countDown: 5,
     role: 0,
-    category: "google"
+    category: "google",
+    guide: {
+      en: "{pn} message | photo reply",
+    },
   },
-  onStart: ({}) => {},
-
-  onChat: async function({ api, event, args, commandName }) {
-    const text = args.join(" ");
-    if (text.startsWith("g")) {
+  onStart: async ({ api, args, event }) => {
+    const prompt = args.join(" ");
+    //---- Image Reply -----//
+    if (event.type === "message_reply") {
+      var t = event.messageReply.attachments[0].url;
       try {
-        const response = await axios.get(`https://mostakim-api.onrender.com/gemini?q=${encodeURIComponent(text)}`);
-
-        if (response.data) {
-          const textContent = response.data.content;
-          const ans = `${textContent}`;
-          api.sendMessage({
-            body: ans,
-          }, event.threadID, (err, info) => {
-            if (err) {
-              console.error("Reply error:", err.message);
-            } else {
-              global.GoatBot.onReply.set(info.messageID, {
-                commandName,
-                messageID: info.messageID,
-                author: event.senderID
-              });
-            }
-          });
-        }
-
+        const response = await axios.get(
+          `${await baseApiUrl()}/gemini?prompt=${encodeURIComponent(prompt)}&url=${encodeURIComponent(t)}`,
+        );
+        const data2 = response.data.dipto;
+        api.sendMessage(data2, event.threadID, event.messageID);
       } catch (error) {
         console.error("Error:", error.message);
+        api.sendMessage(error, event.threadID, event.messageID);
+      }
+    }
+    //---------- Message Reply ---------//
+    else if (!prompt) {
+      return api.sendMessage(
+        "Please provide a prompt or message reply",
+        event.threadID,
+        event.messageID,
+      );
+    } else {
+      try {
+        const respons = await axios.get(
+          `${await baseApiUrl()}/gemini?prompt=${encodeURIComponent(prompt)}`,
+        );
+        const message = respons.data.dipto;
+        api.sendMessage(message, event.threadID, event.messageID);
+      } catch (error) {
+        console.error("Error calling Gemini AI:", error);
+        api.sendMessage(
+          `Sorry, there was an error processing your request.${error}`,
+          event.threadID,
+          event.messageID,
+        );
       }
     }
   },
-
-  onReply: async function({ api, event, Reply, args }) {
-    let { author, commandName } = Reply;
-    const gif = args.join(' ');
-    if (gif.startsWith("Gemini")) {
-      try {
-        const response = await axios.get(`https://mostakim-api.onrender.com/gemini?q=${encodeURIComponent(gif)}`);
-
-        if (response.data) {
-          const textContent = response.data.content;
-          const wh = `${textContent}`;
-          api.sendMessage({
-            body: wh,
-          }, event.threadID, (err, info) => {
-            if (err) {
-              console.error("Reply error:", err.message);
-            } else {
-              global.GoatBot.onReply.set(info.messageID, {
-                commandName,
-                messageID: info.messageID,
-                author: event.senderID
-              });
-            }
-          });
-        }
-
-      } catch (error) {
-        console.error("error:", error.message);
-      }
-    }
-  }
 };
