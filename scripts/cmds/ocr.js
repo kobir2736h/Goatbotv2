@@ -1,42 +1,58 @@
-const axios = require("axios");
-
 module.exports = {
   config: {
     name: "ocr",
-    aliases: ["read"],
-    version: "2.0",
-    author: "tanvir",
+    aliases: [],
+    version: "1.0",
+    author: "Mostakim",
+    countDown: 5,
+    role: 0,
     shortDescription: {
-      en: "Read text from an image",
+      en: "Extract text from image using OCR",
     },
     longDescription: {
-      en: "Extracts text from an image using OCR (Optical Character Recognition)."
+      en: "Extract text from an image using the x-noobs OCR API.",
     },
-    category: "image",
+    category: "utility",
     guide: {
-      en: "{pn} [ reply to an image ]"
+      en: "{pn} [image URL or reply to image]",
     },
   },
 
-  onStart: async function ({ api, args, message, event }) {
-    if (event?.messageReply?.attachments?.[0]?.type !== 'photo') {
-      return message.reply('Please reply to an image to perform OCR');
+  onStart: async function ({ api, event, args }) {
+    const axios = require("axios");
+
+    let imageUrl = args[0];
+
+    // If user replied to an image
+    if (!imageUrl && event.messageReply && event.messageReply.attachments.length > 0) {
+      const attachment = event.messageReply.attachments[0];
+      if (attachment.type === "photo") {
+        imageUrl = attachment.url;
+      }
     }
 
+    if (!imageUrl) {
+      return api.sendMessage("❌ Please provide an image URL or reply to an image.", event.threadID, event.messageID);
+    }
+
+    const apiUrl = `https://www.x-noobs-apis.42web.io/ocr?url=${encodeURIComponent(imageUrl)}`;
+
     try {
-      message.reaction("⏳", event.messageID);
+      const res = await axios.get(apiUrl);
+      const data = res.data;
 
-      const ocr = await axios.post('https://throw-apis.onrender.com/ocr', {
-        image: event.messageReply.attachments[0].url
-      });
-      const text = ocr.data.text;
-
-      message.reply(`✅ | Text detected:\n\n${text}`);
-      message.reaction("✅", event.messageID);
-    } catch (error) {
-      message.reaction("❌", event.messageID);
-      console.error("Error occurred while performing OCR: ", error);
-      message.reply("❌ | An error occurred while performing OCR.");
+      if (data.ParsedResults && data.ParsedResults[0].ParsedText) {
+        const parsedText = data.ParsedResults[0].ParsedText.trim();
+        if (parsedText) {
+          return api.sendMessage(`📄 OCR Result:\n\n${parsedText}`, event.threadID, event.messageID);
+        } else {
+          return api.sendMessage("❌ No text found in the image.", event.threadID, event.messageID);
+        }
+      } else {
+        return api.sendMessage("❌ Could not extract text from the image.", event.threadID, event.messageID);
+      }
+    } catch (err) {
+      return api.sendMessage("❌ Error while processing OCR request.", event.threadID, event.messageID);
     }
   },
 };
