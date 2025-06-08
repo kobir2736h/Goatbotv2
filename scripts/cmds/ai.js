@@ -1,4 +1,4 @@
-const axios = require('axios');
+/cmd install ai const axios = require('axios');
 const UPoLPrefix = [
   '-ai',
   'ai',
