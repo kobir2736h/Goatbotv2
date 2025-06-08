@@ -284,7 +284,7 @@ module.exports = {
     },
     onStart: async function () { },
     onChat: async function ({ api, message, event, commandName }) {
-        console.log('onChat function called');
+        //console.log('onChat function called');
 
         mimeType;
         extension;
@@ -299,7 +299,7 @@ module.exports = {
         });
 
         if (!prefix) {
-            console.log('No prefix found, returning');
+            //console.log('No prefix found, returning');
             return;
         }
 
@@ -413,7 +413,7 @@ module.exports = {
                             console.log(e);
                         }
                         console.log(url);
-                    
+
                         break;
                     case 'video':
                         extension = 'mp4';
@@ -466,7 +466,7 @@ module.exports = {
     },
 
     onReply: async function ({ api, message, event, Reply, args }) {
-        console.log('onReply function called');
+        //console.log('onReply function called');
 
         let links = [];
         let mimeType;
@@ -578,7 +578,7 @@ module.exports = {
                             console.log(e);
                         }
                         console.log(url);
-                    
+
                         break;
                     case 'video':
                         extension = 'mp4';
