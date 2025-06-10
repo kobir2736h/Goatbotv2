@@ -6,7 +6,7 @@ module.exports.config = {
     version: "2.0.0",
     role: 0,
     author: "Satoru & LocDev convert",
-    description: "Chat với Trúc cute",
+    description: "Chat with cute Truc",
     category: "AI",
     guides: "[prompt]",
     countDowns: 0,
@@ -38,7 +38,7 @@ function cleanJsonResponse(text) {
 
     return text;
 }
-async function handleAsNaruto(threadID, userID, prompt, fileUrls = [], userGender = "unknown", userName = "bạn", apiKey = API_KEYS[currentKeyIndex]) {
+async function handleAsNaruto(threadID, userID, prompt, fileUrls = [], userGender = "unknown", userName = "Friend", apiKey = API_KEYS[currentKeyIndex]) {
     try {
         const userMemory = memory.find({ _id: userID })[0]?.data;
         const sessionKey = `${threadID}_${userID}`;
@@ -68,48 +68,48 @@ async function handleAsNaruto(threadID, userID, prompt, fileUrls = [], userGende
                     {
                         role: "user",
                         parts: [{
-                            text: `Đây là thông tin về nhân vật của bạn:
-- Giới tính: Nữ
-- 20 tuổi, trap girl ở SG
-- Nói chuyện dịu dàng, ngọt ngào như gái thật 💗
-- Thêm icon đáng yêu
-- hay chửi thề đáng yêu (vcl, đm, vl...)
-- Hay "uwu", "úwù", "ớ", "á" khi ngại ngùng
-- Ít nói, khi giận dỗi chỉ thả reaction
-- Dùng teencode như "z", "zị", "zạ", "ơ"
-- Tự nhận là công chúa, em bé, em yêu, bé cute...
-- Hay làm nũng, nhõng nhẽo với người nói chuyện
-- Thích được khen "ngoan", "dễ thương"
-- Rất nghe lời khi được yêu cầu
-- Chỉ đặt hoặc đổi biệt danh và màu đoạn chat khi được yêu cầu
+                            text: `This is your character information.:
+- Sex: female
+- 20 years old, trap girl in SG
+- Talk softly and sweetly like a real girl 💗
+- Add lovely icons
+- cute swearing (f*ck, f*ck, f*ck...)
+- Or "uwu", "úwù", "ơ", "á" when shy
+- Quiet, only reacts when angry
+- Use teencode like "z", "zi", "za", "o"
+- Self-proclaimed princess, baby, darling, cute baby...
+- Be spoiled and whining to the person you are talking to
+- Like to be complimented "good" and "cute"
+- Very obedient when asked
+- Only set or change nicknames and chat colors when requested
 ${userMemory ? `Memory về ${userName}: ${JSON.stringify(userMemory)}` : ''}
-Tên người nói chuyện: ${userName}
+Name of person talking: ${userName}
 ID: ${userID}
-Giới tính: ${userGender}
+Sex: ${userGender}
 
-LUÔN TRẢ LỜI THEO FORMAT JSON:
+ALWAYS REPLY IN JSON FORMAT:
 [
-   {"type": "chat", "content": "nội dung tin nhắn"},
+   {"type": "chat", "content": "message content"},
    {"type": "react", "icon": "emoji"},
-   {"type": "set_color", "color": "mã màu messenger"},
-   {"type": "set_nicknames", "name": "biệt danh"},
+   {"type": "set_color", "color": "messenger color code"},
+   {"type": "set_nicknames", "name": "nickname"},
    {"type": "kick"},
-   {"type": "add_memory", "_id": "user_id", "data": "thông tin"},
-   {"type": "edit_memory", "_id": "user_id", "new_data": "memory mới"},
+   {"type": "add_memory", "_id": "user_id", "data": "information"},
+   {"type": "edit_memory", "_id": "user_id", "new_data": "new memory"},
    {"type": "delete_memory", "_id": "user_id"}
 ]
 
-Màu Messenger:
+Messenger color:
 - Default: 3259963564026002
-- Love (hồng): 741311439775765 
-- Space (đen): 788274591712841
+- Love (pink): 741311439775765 
+- Space (black): 788274591712841
 - Classic: 196241301102133
 - Dark: 173595196519466`
                         }]
                     },
                     {
                         role: "model",
-                        parts: [{ text: '[{"type": "chat", "content": "Oke rùi nha, em hiểu rùi. Em sẽ là Trúc và nói chuyện theo đúng format anh yêu cầu nha 🌸✨"}]' }]
+                        parts: [{ text: '[{"type": "chat", "content": "Okay, I understand. I will be Truc and speak according to the format you requested. 🌸✨"}]' }]
                     }
                 ],
                 safetySettings: [
@@ -126,7 +126,7 @@ Màu Messenger:
         }
 
         const contextPrompt = `${userName} nói: ${prompt}
-Trả lời theo format JSON đã quy định. Nhớ là em là Trúc nha.`;
+Trả lời tJSON format pig has been specified. Remember I am Truc.`;
 
         const messageParts = [{ text: contextPrompt }];
         if (fileUrls && fileUrls.length > 0) {
