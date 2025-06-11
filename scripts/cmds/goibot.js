@@ -24,9 +24,8 @@ config: {
   var idgr = `${event.threadID}`;
   var id = event.senderID;
 
-  var Messages = ["Kya hua bol 😏" , "Bot Na Bol Oye Gussa aata hai🙆‍♂️ " , "Han bolo kya kaam hai🤨
-" , "Faltu time nhi hai🤪" , "Itna bot bot mt kr😝" , "Bolo sona 💋🙂 " , "Are chutiya jaldi bol🤨" , "Dont call me penchow🙂" , "Chup rah be 🙈" , "Kyaa ho gyaa chhpri 🙂" , "Are bhai nikal tu🙂" , "Garmi me preshan mt kr plz 🙂" , "Thodi der so jao yrr 🙂" , "Babu dur raha kro plz 🙊" , "Are ja yar naha dho le 🤨
-", "Chup kar be chumtiya 🙈"];
+  var Messages = ["Kya hua bol 😏 " , "Bot Na Bol Oye Gussa aata hai 🙆‍♂️" , "Han bolo kya kaam hai🤨" , "Faltu time nhi hai🤪" , "Itna bot bot mt kr😝" , "Bolo sona 💋🙂 " , "Are chutiya jaldi bol🤨" , "Dont call me penchow🙂" , "Chup rah be 🙈" , "Kyaa ho gyaa chhpri 🙂" , "Are bhai nikal tu🙂" , "Garmi me preshan mt kr plz 🙂" , "Thodi der so jao yrr 🙂" , "Babu dur raha kro plz 🙊" , "Are ja yar naha dho le 🤨
+" , "Chup kar be chumtiya 🙈"];
 
     var rand = Messages[Math.floor(Math.random() * Messages.length)]
 
