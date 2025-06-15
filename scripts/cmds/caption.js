@@ -43,7 +43,7 @@ module.exports = {
     if (!args[0]) return message.reply("⚠ Please specify a category. Example: !caption love");
 
     const category = args[0];
-    const language = args[1] || "bn";
+    const language = args[1] || "en";
 
     try {
       const res = await axios.get(`${baseUrl}/api/caption`, { params: { category, language } });
