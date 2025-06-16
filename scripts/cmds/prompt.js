@@ -5,7 +5,7 @@ module.exports = {
   config: {
     name: "prompt",
     aliases: ["p"],
-    version: "1.2",
+    version: "1.3",
     author: "Team Calyx",
     countDown: 5,
     role: 0,
@@ -25,12 +25,12 @@ module.exports = {
         if (["photo", "sticker"].includes(event.messageReply.attachments[0]?.type)) {
           imageUrl = event.messageReply.attachments[0].url;
         } else {
-          return message.reply("❌ | Reply must be an image.");
+          return message.reply("❌ | 𝚁𝚎𝚙𝚕𝚢 𝙼𝚞𝚜𝚝 𝙱𝚎 𝙰𝚗 𝙸𝚖𝚊𝚐𝚎.");
         }
       } else if (args[0]?.match(/(https?:\/\/.*\.(?:png|jpg|jpeg))/g)) {
         imageUrl = args[0];
       } else if (!promptText) {
-        return message.reply("❌ | Reply to an image or provide a prompt.");
+        return message.reply("❌ | 𝚁𝚎𝚙𝚕𝚢 𝚃𝚘 𝙰𝚗 𝙸𝚖𝚊𝚐𝚎 𝙾𝚛 𝙿𝚛𝚘𝚟𝚒𝚍𝚎 𝙰 𝙿𝚛𝚘𝚖𝚙𝚝.");
       }
 
       if (["-r", "-random"].includes(promptText.toLowerCase())) {
@@ -38,7 +38,6 @@ module.exports = {
         const description = response.data.data.prompt;
         await message.reply(description);
       } else if (["-anime", "-a"].some(flag => promptText.toLowerCase().includes(flag))) {
-        // Use the new URL if the '-anime' or '-a' flag is present
         response = await axios.get(`https://smfahim.${ok}/prompt2?url=${encodeURIComponent(imageUrl || promptText)}`);
         if (response.data.code === 200) {
           const description = response.data.data;
