@@ -1,49 +1,54 @@
 const axios = require('axios');
-const { getStreamFromURL } = global.utils;
+const fs = require('fs');
+const path = require('path');
 
 module.exports = {
   config: {
-    name: "anim",
-    aliases: ["animefy"],
-    version: "2.2",
-    author: "Team Calyx",
-    countDown: 10,
-    role: 0,
-    shortDescription: "Anime transformation",
-    longDescription: "Convert photos to anime style artwork",
-    category: "image",
+    name: "animegen",
+    version: "1.0",
+    author: "Aryan Chauhan | Deku API",
+    shortDescription: "Generate img",
+    longDescription: "generate anime images.",
+    category: "ai",
     guide: {
-      en: "{pn} [reply to image]"
+      en: "`"
     }
   },
 
-  onStart: async function ({ api, message, event }) {
+  onStart: async function ({ message, args, event, api }) {
     try {
-      if (!event.messageReply?.attachments?.[0]?.url) {
-        return message.reply("❌ Please reply to an image!");
+      const prompt = args.join(" ");
+      if (!prompt) {
+        return api.sendMessage("ℹ️ | Please provide a prompt", event.threadID);
       }
 
-      const imgUrl = event.messageReply.attachments[0].url;
-      const processingMsg = await message.reply("🔄 Creating anime art...");
+      const loadingMsg = await api.sendMessage(`Generating your image...`, event.threadID);
 
-      const response = await axios.get(`http://45.134.39.193:6298/animirror?url=${encodeURIComponent(imgUrl)}`);
-      
-      if (!response.data?.image_url) {
-        throw new Error("Invalid API response format");
-      }
-
-      const imageStream = await getStreamFromURL(response.data.image_url);
-
-      await message.reply({
-        body: "🎨 Your anime transformation is ready!",
-        attachment: imageStream
+      const response = await axios.get(`https://api.zetsu.xyz/api/animagine?prompt=${encodeURIComponent(prompt)}&apikey=e243859b462fd483dc1ffb053d736c41`, {
+        responseType: 'stream'
       });
 
-      await api.unsendMessage(processingMsg.messageID);
+      const filePath = path.join(__dirname, `ai_art_${event.senderID}.png`);
+      const writer = fs.createWriteStream(filePath);
+      response.data.pipe(writer);
 
-    } catch (error) {
-      console.error('Error:', error);
-      message.reply("❌ Failed to create anime art. Please try another image.");
+      writer.on('finish', async () => {
+        await api.sendMessage({
+          body: `✅ | Here's your image\nPrompt: "${prompt}"`,
+          attachment: fs.createReadStream(filePath)
+        }, event.threadID);
+
+        if (loadingMsg.messageID) api.unsendMessage(loadingMsg.messageID);
+        fs.unlinkSync(filePath);
+      });
+
+      writer.on('error', err => {
+        throw err;
+      });
+
+    } catch (err) {
+      console.error("❌ Error:", err.message || err);
+      await api.sendMessage("❌ | Failed to generate art. Please try again later.", event.threadID);
     }
   }
 };
