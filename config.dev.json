@@ -2,7 +2,7 @@
   "facebookAccount": {
     "email": "",
     "password": "",
-    "2FASecret": "C7MJ5D4TEEFZ5VFIS6L267LGQHK6EAUL",
+    "2FASecret": "",
     "i_user": "",
     "proxy": "http://38.147.98.190:8080",
     "userAgent": "Mozilla/5.0 (Linux; Android 12; M2102J20SG) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.0.0 Mobile Safari/537.36",
@@ -38,7 +38,7 @@
   "timeZone": "Asia/Dhaka",
   "credentials": {
     "gmailAccount": {
-      "email": "romeobot555@gmail.com",
+      "email": "romeobot55@gmail.com",
       "clientId": "552344212361-ujv8mjve7ue0r20t5caem9a41o8il508.apps.googleusercontent.com",
       "clientSecret": "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",
       "refreshToken": "1//04KHgkn8_-_PfCgYIARAAGAQSNwF-L9Iro-cV9UkOYQjg6noVALzdmrnrL8rijCPS96WGrKoflqLkXr76iZiXezLunTbJAU1AxS4",
@@ -70,7 +70,7 @@
   "autoUptime": {
     "enable": true,
     "timeInterval": 180,
-    "url": "https://goatbotv2-nm58.onrender.com",
+    "url": "",
     "notes": "the value of timeInterval is seconds, url is the url you want to send the request to (automatically detected for hosting glitch or replit)"
   },
   "autoLoadScripts": {
