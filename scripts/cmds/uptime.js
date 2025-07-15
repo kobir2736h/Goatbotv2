@@ -32,7 +32,7 @@ module.exports = {
     
     // here add your bot uptime url of render or any other  platform👇
     
-    const url = 'https://goatbot-gupta.onrender.com'; 
+    // const url = 'https://goatbot-gupta.onrender.com'; 
 
     try {
       const isAuthorValid = await checkAuthor(module.exports.config.author);
